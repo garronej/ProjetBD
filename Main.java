@@ -1333,7 +1333,8 @@ public class Main {
                 System.out.println("Prix:");
                 commandeSQL=entree.nextLine();
             }while(!commandeSQL.contentEquals(""));
-            query.setString(4,commandeSQL);
+            query.setFloat(4,Float.parseFloat(commandeSQL));
+            query.executeUpdate();
         
 
         }
