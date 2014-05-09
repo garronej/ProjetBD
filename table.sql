@@ -75,8 +75,8 @@ CREATE TABLE EMPLOYES(
 			FOREIGN KEY(mail) REFERENCES PERSONNES,
 		CONSTRAINT FK_IdPizzeria_Employes
 			FOREIGN KEY(IdPizzeria) REFERENCES PIZZERIAS,
-		CONSTRAINT UNIQUE_IDPIZZERIA_MAIL --Un employe ne peux travailler que dans une pizzeria
-			UNIQUE (idPizzeria, mail),
+		CONSTRAINT UNIQUE_IDPIZZERIA_MAIL --Un employe ne peux travailler que dans une pizzeria et a un seul poste
+			UNIQUE (mail),
 		CONSTRAINT VIOLATION_POSITIV_NOEMPLOYE 
 			CHECK (NoEmploye>0)
 );
