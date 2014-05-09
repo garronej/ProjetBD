@@ -148,7 +148,7 @@ CREATE TABLE PIZZAS(
 		CONSTRAINT PK_ID_Pizzas 
 			PRIMARY KEY (IdPizzeria, NomPizza, taille),
 		CONSTRAINT VIOLATION_POSITIVE_PIZZA 
-			CHECK (Taille>0 AND Prix>0),
+			CHECK (Prix>0),
 		CONSTRAINT Non_Exist_Taille 
 			CHECK (Taille IN ('Mini','Moyenne','Grande'))
 );

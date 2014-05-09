@@ -63,6 +63,12 @@ public class Main {
                 case "permis":
                     permis();
                 break;
+                case "vehicule":
+                    vehicule();
+                break;
+                case "pizza":
+                    pizza();
+                break;
                 default:
                 System.out.println("Mauvaise commande, entrer \"help\"pour afficher les commandes possibles.");
             }
@@ -1297,4 +1303,45 @@ public class Main {
         requete.nextTransaction();
 
     }
+
+
+
+    static private void permis() throws Exception {
+        System.out.println("Voulez vous a:ajouter ou s:supprimer une pizza ?");
+        commandeSQL=entree.nextLine();
+        if ( commandeSQL.contentEquals("a") ){
+            baseQuery="INSERT INTO Pizzas(IdPizzeria,NomPizza,Taille,Prix) VALUES(?,?,?,?)";
+            query=requete.getConnection().prepareStatement(baseQuery);
+            do{
+                do {
+                    System.out.println("IdPizzeria:");
+                    commandeSQL = entree.nextLine();
+                }while((!commandeSQL.matches("^[0-9]+$")));
+            }while( Integer.parseInt(commandeSQL)==0);
+            query.setInt(1,Integer.parseInt(commandeSQL));
+            do{
+                System.out.println("nomPizza");
+                commandeSQL=entree.nextLine();
+            }while(!commandeSQL.contentEquals(""));
+            query.setString(2,commandeSQL);
+            do{
+                System.out.println("Taille (Mini, Moyenne ou Grande):");
+                commandeSQL=entree.nextLine();
+            }while(!commandeSQL.contentEquals("Mini")||!commandeSQL.contentEquals("Moyenne")||!commandeSQL.contentEquals("Grande"));
+            query.setString(3,commandeSQL);
+            do{
+                System.out.println("Prix:");
+                commandeSQL=entree.nextLine();
+            }while(!commandeSQL.contentEquals(""));
+            query.setString(4,commandeSQL);
+        
+
+        }
+
+
+
+
+
+
+
 }
