@@ -29,6 +29,9 @@ public class Main {
 			commande = entree.nextLine();
 
 			switch (commande) {
+				case "stat":
+					stat();
+				break;
 				case "help":
 					help();
 				break;
@@ -1348,7 +1351,7 @@ public class Main {
 		System.out.println("Voulez vous a:ajouter ou s:supprimer une commande ?");
 		commandeSQL=entree.nextLine();
 		if ( commandeSQL.contentEquals("a") ){
-			baseQuery="INSERT INTO Commandes(IdPizzeria,prixCommande,heurDebut) VALUES(?,?,?)";
+			baseQuery="INSERT INTO Commandes(IdPizzeria,prixCommande,heurDebut,noClient,noCommande) VALUES(?,?,?,?,?)";
 			query=requete.getConnection().prepareStatement(baseQuery);
 			do{
 				do {
@@ -1358,6 +1361,14 @@ public class Main {
 			}while( Integer.parseInt(commandeSQL)==0);
 			int id=Integer.parseInt(commandeSQL);
 			query.setInt(1,Integer.parseInt(commandeSQL));
+			do{
+				do {
+					System.out.println("NumeroClient:");
+					commandeSQL = entree.nextLine();
+				}while((!commandeSQL.matches("^[0-9]+$")));
+			}while( Integer.parseInt(commandeSQL)==0);
+			int numCl=Integer.parseInt(commandeSQL);
+			query.setInt(4,Integer.parseInt(commandeSQL));
 			/*do{
 			  System.out.println("Prix:");
 			  commandeSQL=entree.nextLine();
@@ -1367,7 +1378,7 @@ public class Main {
 				commandeSQL=entree.nextLine();
 			}while(commandeSQL.contentEquals(""));
 			query.setTimestamp(3,Timestamp.valueOf(commandeSQL));
-			float prix=0;
+			float prix=1;
 			int nbp;
 			do{
 				do {
@@ -1376,12 +1387,20 @@ public class Main {
 				}while((!commandeSQL.matches("^[0-9]+$")));
 			}while( Integer.parseInt(commandeSQL)==0);
 			nbp= Integer.parseInt(commandeSQL);
-			for (int i=1; i<nbp;i++)
-				prix+=ligneCommande(i,id);
-
-
+			int numCo =(int) (Math.random()*1500000+50);
 			query.setFloat(2,prix);
+			query.setInt(5,numCo);
 			query.executeUpdate();
+			prix=0;
+			for (int i=1; i<=nbp;i++)
+				prix+=ligneCommande(i,id,numCo);
+			
+			baseQuery="UPDATE COMMANDES SET prixCommande=? WHERE idPizzeria=? AND noClient=?";
+			query=requete.getConnection().prepareStatement(baseQuery);
+			query.setFloat(1,prix);
+			query.setInt(2,id);
+			query.setInt(3,numCl);
+
 		} else if (commandeSQL.contentEquals("s")) {
 			baseQuery="SELECT IdPizzeria, noCommande FROM Commandes";
 			requete.setQuery(baseQuery);
@@ -1417,19 +1436,12 @@ public class Main {
 		requete.nextTransaction();
 	}
 
-	static private float ligneCommande(int numLigne, int idp) throws Exception { 
+	static private float ligneCommande(int numLigne, int idp, int num) throws Exception { 
 		System.out.println("Vous allez choisir une nouvelle ligne de commande");
 		commandeSQL=entree.nextLine();
-		baseQuery="INSERT INTO LIGNES_COMMANDE(IdPizzeria,noCommande,NomPizza,Taille,nbPizza,PrixLigne) VALUES(?,?,?,?,?,?)";
+		baseQuery="INSERT INTO LIGNES_COMMANDE(IdPizzeria,noCommande,NomPizza,Taille,nbPizza,noLigne) VALUES(?,?,?,?,?,?)";
 		
 		// query.setInt(1,Integer.parseInt(commandeSQL));
-		do{
-			do {
-				System.out.println("noCommande:");
-				commandeSQL = entree.nextLine();
-			}while((!commandeSQL.matches("^[0-9]+$")));
-		}while( Integer.parseInt(commandeSQL)==0);
-		int num=Integer.parseInt(commandeSQL);
 		//query.setInt(2,id);
 		do{
 			System.out.println("nomPizza");
@@ -1457,21 +1469,32 @@ public class Main {
 		stmt.setString(2,nom);
 		stmt.setString(3,taille);
 		ResultSet rs = stmt.executeQuery();
-
 		float prix=0;
 		if (rs.next()){
 			prix=rs.getFloat("PRIX");
 			//query.setFloat(4,rs.getFloat("Prix"));
 		}
+		System.out.println("lml");
 		stmt.close();
+		query=requete.getConnection().prepareStatement(baseQuery);
+		query.setInt(1,idp);
+		query.setInt(2,num);
+		query.setString(3,nom);
+		query.setString(4,taille);
+		query.setInt(5,nb);
+		query.setInt(6,numLigne);
+		query.executeUpdate();
+
 		int compt=0;
 		switch (taille) {
 			case "Mini":
 				while ( compt<2){
 					System.out.println("Voulez un ingrédient suppémentaire?");
 					commandeSQL = entree.nextLine();
-					if (commandeSQL.contentEquals(""))
-							break;
+					if (commandeSQL.contentEquals("")){
+					return (nb*prix+2*compt);
+					}
+						
 					extra(idp,num,numLigne);
 					compt++;
 				}
@@ -1496,15 +1519,6 @@ public class Main {
 				break;
 
 		}
-		query=requete.getConnection().prepareStatement(baseQuery);
-		query.setInt(1,idp);
-		query.setInt(2,num);
-		query.setString(3,nom);
-		query.setString(4,taille);
-		query.setInt(5,num);
-		query.setFloat(6,nb*prix);
-		query.executeUpdate();
-
 		requete.nextTransaction();
 		return (nb*prix+2*compt);
 	}
@@ -1527,6 +1541,33 @@ public class Main {
 	}
 
 
+	static private void stat() throws Exception {
+				
+		System.out.println("nombre de pizzas commandé par jour");
+
+
+			baseQuery="SELECT (HeurDebut+0) AS \"JOUR\", COUNT(*) AS \"QUANTITE\" FROM COMMANDES GROUP BY (HeurDebut+0)";
+			requete.setQuery(baseQuery);
+			requete.requete();
+
+		System.out.println("pizza préférée de clients");
+			baseQuery= " ELECT NomPizza AS \"La pizza prefere\" FROM LIGNES_COMMANDE GROUP BY NomPizza HAVING SUM (NbPizza)= ( SELECT MAX (SUM (NbPizza)) FROM LIGNEs_COMMANDE GROUP BY NomPizza)";
+			requete.setQuery(baseQuery);
+			requete.requete();
+
+		System.out.println("Véhicules les plus utilisés");
+
+			baseQuery=" SELECT NoPlaque ROM LIVRAISONS GROUP BY NoPlaque HAVING COUNT (HeurDepart)= (SELECT MAX (COUNT (HeurDepart)) FROM LIVRAISONS GROUP BY NoPlaque) ";
+			requete.setQuery(baseQuery);
+			requete.requete();
+
+		System.out.println("Temps moyen de livraison");
+
+			baseQuery="SELECT (AVG((HeurRetour + 0)-(HeurDepart + 0)))*24*60 AS \"MOYEN MINUTES\"FROM LIVRAISONS ";
+			requete.setQuery(baseQuery);
+			requete.requete();
+
+	}
 
 
 
