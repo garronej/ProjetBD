@@ -9,9 +9,7 @@ CREATE TABLE ADRESSES(
 	CONSTRAINT PK_ID_ADRESSE 
 		PRIMARY KEY (IdAdresse),
 	CONSTRAINT VIOLATION_MUST_BE_POSITIVE
-		CHECK(NumRue>0),
-	CONSTRAINT NOT_UNIQUE_NUMRUE_NOMRUE_CP
-		UNIQUE (numRue, nomRue, cp)
+		CHECK(NumRue>0)
 );
 
 CREATE TABLE PIZZERIAS(
@@ -58,7 +56,9 @@ CREATE TABLE CLIENTS(
 		CONSTRAINT FK_Mail_Clients
 			FOREIGN KEY(mail) REFERENCES PERSONNES,
 		CONSTRAINT VIOLATION_POSITIV_CLIENT
-			CHECK (noClient>0)
+			CHECK (noClient>0),
+		CONSTRAINT VIOL_UNIQUE_PIZ_MAIL --Une perrsone n'est client qu'une fois d'une meme pizeria.
+			UNIQUE (idPizzeria, mail)
 );
 
 -------------------------------
@@ -125,13 +125,11 @@ CREATE TABLE VEHICULES(
 	NoPlaque VARCHAR(10),
 	TypeVehicule NCHAR(1),
 	CONSTRAINT PK_IDPIZZERIA_NOPLAQUE
-		PRIMARY KEY(idPizzeria, noPlaque),
+		PRIMARY KEY(noPlaque),
 	CONSTRAINT FK_IdPizzeria_Vehicules
-		FOREIGN KEY(IdPizzeria) REFERENCES PIZZERIAS(IdPizzeria),
+		FOREIGN KEY(IdPizzeria) REFERENCES PIZZERIAS,
 	CONSTRAINT FK_TypeVehicule_Vehicules 
-		FOREIGN KEY(typeVehicule) REFERENCES PERMIS_VEHICULE,
-	CONSTRAINT VIOLATION_UNIQUE_NO_PLAQUE
-		UNIQUE (NoPlaque)
+		FOREIGN KEY(typeVehicule) REFERENCES PERMIS_VEHICULE
 );
 
 
@@ -159,14 +157,17 @@ CREATE TABLE PIZZAS(
 CREATE TABLE COMMANDES(
 	idPizzeria INTEGER,
 	noCommande INTEGER,
-	prixCommande NUMBER(*,2), --sommes des lignes commandes TODO
+	noClient INTEGER,
+	prixCommande NUMBER(*,2), --sommes des lignes commandes fait en java
 	heurDebut TIMESTAMP NOT NULL,
-	CONSTRAINT PK_ID_Commandes PRIMARY
-		KEY(IdPizzeria, NoCommande),
+	CONSTRAINT PK_ID_Commandes 
+		PRIMARY KEY (idPizzeria, noCommande),
 	CONSTRAINT VIOLATION_POSITIV_COMMANDE
 		CHECK (NoCommande > 0),
 	CONSTRAINT FK_IdPizzeria_Commandes 
-		FOREIGN KEY(IdPizzeria) REFERENCES PIZZERIAS
+		FOREIGN KEY(IdPizzeria) REFERENCES PIZZERIAS,
+	CONSTRAINT FK_NOLIVREUR
+		FOREIGN KEY(idPizzeria,noClient) REFERENCES CLIENTS
 );
 
 --CREATE FUNCTION getPrixCommande( idPizzeriaIn in INTEGER, noCommandeIn in INTEGER) 
@@ -193,13 +194,12 @@ CREATE TABLE LIGNES_COMMANDE(
 	noCommande INTEGER,
 	noLigne INTEGER, NomPizza VARCHAR(20), Taille VARCHAR(7),
 	nbPizza INTEGER NOT NULL,
-	prixLigne NUMBER(*,2), --prix d'une ligne a calculer
 		CONSTRAINT PK_IDPIZZ_NOCOM_NOLI
 			PRIMARY KEY (idPizzeria, noCommande, noLigne),
 		CONSTRAINT VIOLATION_POSITIV_LIGNE
 			CHECK (NoLigne>0 AND NbPizza>0 ),
 		CONSTRAINT FK_IdPizzaeria_NoCommande 
-			FOREIGN KEY(IdPizzeria, NoCommande) REFERENCES COMMANDES(IdPizzeria, NoCommande),
+			FOREIGN KEY(IdPizzeria, NoCommande) REFERENCES COMMANDES,
 		CONSTRAINT FK_NomPizza_Taille 
 			FOREIGN KEY(IdPizzeria, NomPizza, Taille) REFERENCES PIZZAS
 );
@@ -211,8 +211,8 @@ CREATE TABLE LIGNES_COMMANDE(
 CREATE TABLE LIVRAISONS(
 	idPizzeria INTEGER,
 	noLivraison INTEGER NOT NULL,
-	noPlaque VARCHAR(10), --TODO verifier que çe vehicule n'effectue pas une autres livraison dans la meme tranche horaire.
-	noLivreur INTEGER, --TODO vérifier que la meme chose pour le livreur.
+	noPlaque VARCHAR(10), --JAVA verifier que çe vehicule n'effectue pas une autres livraison dans la meme tranche horaire. + Le vehicule appartien a la pizzeria
+	noLivreur INTEGER, --JAVA verifier que la meme chose pour le livreur.
 	heurDepart TIMESTAMP NOT NULL, 
 	heurRetour TIMESTAMP NOT NULL,
 		CONSTRAINT PK_ID_LIvraisons 
@@ -222,9 +222,9 @@ CREATE TABLE LIVRAISONS(
 		CONSTRAINT VIOLATIONG_TIME_CONSTRAINT 
 			CHECK (HeurDepart<HeurRetour),
 		CONSTRAINT FK_IdPiz_NoPlaque 
-			FOREIGN KEY(IdPizzeria, NoPlaque) REFERENCES VEHICULES,
-	CONSTRAINT FK_IdPizzeria_NoLivreur 
-		FOREIGN KEY(IdPizzeria, NoLivreur) REFERENCES EMPLOYES(IdPizzeria, NoEmploye)
+			FOREIGN KEY(noPlaque) REFERENCES VEHICULES,
+		CONSTRAINT FK_IdPizzeria_NoLivreur 
+			FOREIGN KEY(IdPizzeria, NoLivreur) REFERENCES EMPLOYES(IdPizzeria, NoEmploye)
 );
 
 
