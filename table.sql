@@ -191,7 +191,9 @@ CREATE TABLE COMMANDES(
 CREATE TABLE LIGNES_COMMANDE(
 	idPizzeria INTEGER,
 	noCommande INTEGER,
-	noLigne INTEGER, NomPizza VARCHAR(20), Taille VARCHAR(7),
+	noLigne INTEGER, 
+	NomPizza VARCHAR(20), 
+	Taille VARCHAR(7),
 	nbPizza INTEGER NOT NULL,
 	prixLigne NUMBER(*,2), --prix d'une ligne a calculer
 		CONSTRAINT PK_IDPIZZ_NOCOM_NOLI
